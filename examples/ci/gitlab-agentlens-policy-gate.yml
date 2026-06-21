@@ -1,0 +1,10 @@
+agentlens_policy_gate:
+  image: python:3.12-slim
+  stage: test
+  before_script:
+    - pip install PyYAML
+  script:
+    - python scripts/agentlens-policy-check.py --policy configs/policies/enforcement.yaml --findings-file data/findings/findings.jsonl --gate pull_request
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'

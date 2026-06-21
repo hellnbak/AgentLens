@@ -1,0 +1,22 @@
+rules:
+  - id: git.force_push
+    category: git
+    severity: medium
+    risk_score: 55
+    description: Git force push detected.
+    patterns:
+      - 'git\s+push\s+.*(--force|-f)'
+  - id: git.commit_sensitive_file
+    category: git
+    severity: high
+    risk_score: 80
+    description: Git command references sensitive files.
+    patterns:
+      - 'git\s+(add|commit|push).*?(\.env|id_rsa|id_ed25519|credentials|secrets|\.pem|\.key)'
+  - id: git.remote_change
+    category: git
+    severity: medium
+    risk_score: 50
+    description: Git remote changed or added.
+    patterns:
+      - 'git\s+remote\s+(add|set-url|rename|remove)'

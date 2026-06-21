@@ -1,0 +1,30 @@
+# Optional static identity enrichment.
+# This works without Okta, JumpCloud, or any other IdP.
+users:
+  alice@example.com:
+    display_name: Alice Example
+    team: engineering
+    department: product-engineering
+    cost_center: ENG
+    manager: eng-manager@example.com
+    groups:
+      - agentlens-users
+  security@example.com:
+    display_name: Security Team
+    team: security
+    department: security
+    cost_center: SEC
+    groups:
+      - agentlens-admins
+
+devices:
+  example-macbook-serial:
+    owner_email: alice@example.com
+    team: engineering
+    environment: prod
+
+teams:
+  engineering:
+    monthly_budget_usd: 1000
+  security:
+    monthly_budget_usd: 500

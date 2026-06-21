@@ -1,0 +1,8 @@
+DeviceProcessEvents
+| where FileName in~ ("claude", "cursor", "aider", "goose", "agentlens-endpoint-agent")
+| summarize LastSeen=max(Timestamp), Count=count() by DeviceName, InitiatingProcessAccountUpn, FileName
+
+DeviceProcessEvents
+| where FileName in~ ("systemctl", "launchctl")
+| where ProcessCommandLine has_any ("agentlens", "otelcol")
+| project Timestamp, DeviceName, InitiatingProcessAccountUpn, FileName, ProcessCommandLine

@@ -1,0 +1,11 @@
+DeviceProcessEvents
+| where ProcessCommandLine has_any ("agentlens", "otelcol", "otelcol-contrib")
+| project Timestamp, DeviceName, InitiatingProcessAccountName, FileName, ProcessCommandLine
+
+DeviceFileEvents
+| where FolderPath has_any ("/etc/agentlens", "C:\\ProgramData\\agentlens", "com.agentlens")
+| project Timestamp, DeviceName, ActionType, FolderPath, FileName, InitiatingProcessCommandLine
+
+DeviceProcessEvents
+| where ProcessCommandLine has_any ("systemctl disable agentlens", "launchctl unload")
+| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine

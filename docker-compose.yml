@@ -1,0 +1,126 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    command:
+    - --config=/etc/otelcol/config.yaml
+    volumes:
+    - ./configs/otel-collector/collector.yaml:/etc/otelcol/config.yaml:ro
+    - ./data/otel:/var/lib/agentlens
+    ports:
+    - 4317:4317
+    - 4318:4318
+    - 8888:8888
+    - 8889:8889
+    restart: unless-stopped
+  detector:
+    build: ./services/detector
+    environment:
+      AGENTLENS_LOG_FILE: /data/otel/agentlens-logs.jsonl
+      AGENTLENS_TRACE_FILE: /data/otel/agentlens-traces.jsonl
+      AGENTLENS_FINDINGS_FILE: /data/findings/findings.jsonl
+      AGENTLENS_RULE_DIR: /app/rules
+      AGENTLENS_PRICING_DIR: /app/pricing
+      AGENTLENS_WEBHOOK_URL: ${AGENTLENS_WEBHOOK_URL:-}
+      AGENTLENS_MIN_ALERT_RISK: ${AGENTLENS_MIN_ALERT_RISK:-75}
+      AGENTLENS_IDENTITY_CACHE: /data/identity/identity-cache.json
+    volumes:
+    - ./data/otel:/data/otel
+    - ./data/findings:/data/findings
+    - ./configs/rules:/app/rules:ro
+    - ./configs/pricing:/app/pricing:ro
+    - ./data/identity:/data/identity
+    ports:
+    - ${DETECTOR_PORT:-8090}:8090
+    depends_on:
+    - otel-collector
+    restart: unless-stopped
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.path=/prometheus
+    - --web.enable-lifecycle
+    volumes:
+    - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - prometheus-data:/prometheus
+    ports:
+    - 9090:9090
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana:11.4.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+    - grafana-data:/var/lib/grafana
+    - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
+    - ./dashboards/grafana:/var/lib/grafana/dashboards:ro
+    ports:
+    - 3000:3000
+    depends_on:
+    - prometheus
+    restart: unless-stopped
+  identity-sync:
+    build: ./services/identity-sync
+    profiles:
+    - idp
+    environment:
+      AGENTLENS_IDP_ENABLED: ${AGENTLENS_IDP_ENABLED:-false}
+      AGENTLENS_IDP_PROVIDER: ${AGENTLENS_IDP_PROVIDER:-static}
+      AGENTLENS_IDENTITY_MAP: /app/identity/static-identity-map.yaml
+      AGENTLENS_IDENTITY_CACHE: /data/identity/identity-cache.json
+      OKTA_ORG_URL: ${OKTA_ORG_URL:-}
+      OKTA_API_TOKEN: ${OKTA_API_TOKEN:-}
+      JUMPCLOUD_API_KEY: ${JUMPCLOUD_API_KEY:-}
+      JUMPCLOUD_ORG_ID: ${JUMPCLOUD_ORG_ID:-}
+    volumes:
+    - ./configs/identity:/app/identity:ro
+    - ./data:/data
+    restart: unless-stopped
+  action-router:
+    build: ./services/action-router
+    environment:
+      AGENTLENS_FINDINGS_FILE: /data/findings/findings.jsonl
+      AGENTLENS_POLICY_FILE: /app/policies/enforcement.yaml
+      AGENTLENS_ACTIONS_FILE: /data/enforcement/actions.jsonl
+      AGENTLENS_ENFORCEMENT_DRY_RUN: ${AGENTLENS_ENFORCEMENT_DRY_RUN:-true}
+      AGENTLENS_ACTION_WEBHOOK_URL: ${AGENTLENS_ACTION_WEBHOOK_URL:-}
+      AGENTLENS_SLACK_WEBHOOK_URL: ${AGENTLENS_SLACK_WEBHOOK_URL:-}
+      JIRA_BASE_URL: ${JIRA_BASE_URL:-}
+      JIRA_EMAIL: ${JIRA_EMAIL:-}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN:-}
+      JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-}
+    volumes:
+    - ./data/findings:/data/findings
+    - ./data/enforcement:/data/enforcement
+    - ./configs/policies:/app/policies:ro
+    ports:
+    - ${ACTION_ROUTER_PORT:-8091}:8091
+    depends_on:
+    - detector
+    restart: unless-stopped
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.12
+    profiles:
+    - clickhouse
+    ports:
+    - 8123:8123
+    - 9000:9000
+    volumes:
+    - clickhouse-data:/var/lib/clickhouse
+    - ./configs/clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+  mcp-inventory:
+    build: ./services/mcp-inventory
+    profiles:
+    - mcp
+    volumes:
+    - $HOME/.config:/host/home/.config:ro
+    ports:
+    - ${MCP_INVENTORY_PORT:-8092}:8092
+    restart: unless-stopped
+volumes:
+  prometheus-data: null
+  grafana-data: null
+  clickhouse-data: {}

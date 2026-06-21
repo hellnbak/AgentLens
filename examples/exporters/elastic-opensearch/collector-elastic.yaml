@@ -1,0 +1,13 @@
+exporters:
+  elasticsearch:
+    endpoints: ["${ELASTICSEARCH_ENDPOINT}"]
+    logs_index: agentlens-logs
+    traces_index: agentlens-traces
+    user: ${ELASTICSEARCH_USER}
+    password: ${ELASTICSEARCH_PASSWORD}
+service:
+  pipelines:
+    logs:
+      exporters: [elasticsearch]
+    traces:
+      exporters: [elasticsearch]

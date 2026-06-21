@@ -1,0 +1,14 @@
+services:
+  agentlens-endpoint-agent:
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    command: ["--config=/etc/otelcol/agent.yaml"]
+    env_file:
+      - ../../configs/endpoint-agent/agent.env.example
+    volumes:
+      - ../../configs/endpoint-agent/agent.yaml:/etc/otelcol/agent.yaml:ro
+      - ./logs:/var/log/agentlens
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:8888:8888"
+    restart: unless-stopped

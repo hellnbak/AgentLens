@@ -1,0 +1,28 @@
+rules:
+  - id: endpoint.collector_stopped
+    category: endpoint-tamper
+    severity: high
+    risk_score: 90
+    description: Endpoint collector process or service is stopped or not listening.
+    patterns:
+      - collector_process_not_found
+      - collector_otlp_grpc_not_listening
+      - collector_service_inactive
+
+  - id: endpoint.watchdog_stopped
+    category: endpoint-tamper
+    severity: critical
+    risk_score: 95
+    description: Endpoint watchdog service is inactive. Collection may have been tampered with.
+    patterns:
+      - watchdog_service_inactive
+
+  - id: endpoint.config_modified
+    category: endpoint-tamper
+    severity: critical
+    risk_score: 98
+    description: Endpoint collector config checksum changed or expected checksum is missing.
+    patterns:
+      - collector_config_checksum_mismatch
+      - expected_checksum_missing
+      - collector_config_missing

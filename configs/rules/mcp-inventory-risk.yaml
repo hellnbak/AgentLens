@@ -1,0 +1,8 @@
+rules:
+  - id: mcp_server_can_access_filesystem_or_shell
+    category: mcp-risk
+    severity: high
+    risk_score: 80
+    description: MCP server configuration references filesystem or shell-capable tools.
+    patterns:
+      - '(?i)mcp.*(filesystem|shell|bash|command|exec)'

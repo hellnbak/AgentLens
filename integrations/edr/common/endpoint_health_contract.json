@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentLens Endpoint Health Contract",
+  "type": "object",
+  "required": ["endpoint_id", "hostname", "collector_status", "watchdog_status", "last_heartbeat"],
+  "properties": {
+    "endpoint_id": { "type": "string" },
+    "hostname": { "type": "string" },
+    "user_email": { "type": "string" },
+    "edr_vendor": { "type": "string" },
+    "collector_status": { "enum": ["healthy", "unhealthy", "stale", "missing", "unknown"] },
+    "watchdog_status": { "enum": ["healthy", "unhealthy", "missing", "unknown"] },
+    "config_checksum_valid": { "type": "boolean" },
+    "tamper_events_24h": { "type": "integer" },
+    "last_heartbeat": { "type": "string" }
+  }
+}

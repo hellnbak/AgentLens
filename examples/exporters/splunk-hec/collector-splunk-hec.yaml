@@ -1,0 +1,13 @@
+exporters:
+  splunk_hec:
+    token: ${SPLUNK_HEC_TOKEN}
+    endpoint: ${SPLUNK_HEC_ENDPOINT}
+    source: agentlens
+    sourcetype: _json
+    index: ${SPLUNK_INDEX}
+    tls:
+      insecure_skip_verify: false
+service:
+  pipelines:
+    logs:
+      exporters: [splunk_hec]

@@ -1,0 +1,108 @@
+# AgentLens enforcement policy
+# Level 1: alert/ticket/webhook response from findings.
+# Level 2: CI/PR gates that fail builds when matching findings exist.
+
+defaults:
+  mode: monitor # monitor | warn | block
+  min_risk_score: 75
+  dedupe_window_seconds: 3600
+  dry_run: true
+
+level1_actions:
+  slack_webhook:
+    enabled: false
+    url_env: AGENTLENS_SLACK_WEBHOOK_URL
+    min_risk_score: 75
+  generic_webhook:
+    enabled: false
+    url_env: AGENTLENS_ACTION_WEBHOOK_URL
+    min_risk_score: 75
+  jira:
+    enabled: false
+    base_url_env: JIRA_BASE_URL
+    email_env: JIRA_EMAIL
+    api_token_env: JIRA_API_TOKEN
+    project_key_env: JIRA_PROJECT_KEY
+    issue_type: Task
+    min_risk_score: 85
+  file_audit:
+    enabled: true
+    path: /data/enforcement/actions.jsonl
+    min_risk_score: 0
+
+level2_gates:
+  default:
+    mode: block
+    min_risk_score: 80
+    block_severities:
+      - critical
+      - high
+    block_categories:
+      - secrets
+      - dlp
+      - shell-risk
+      - git-risk
+      - iac-risk
+      - mcp-risk
+      - endpoint-tamper
+    allow_rule_ids: []
+    allow_finding_ids: []
+  pull_request:
+    mode: block
+    min_risk_score: 75
+    block_severities:
+      - critical
+      - high
+    block_categories:
+      - secrets
+      - dlp
+      - shell-risk
+      - iac-risk
+      - mcp-risk
+    allow_rule_ids: []
+    allow_finding_ids: []
+
+policies:
+  - id: alert_high_risk_findings
+    description: Alert on high-risk AgentLens findings.
+    level: 1
+    enabled: true
+    match:
+      min_risk_score: 75
+    actions:
+      - file_audit
+      - generic_webhook
+      - slack_webhook
+
+  - id: create_ticket_for_critical_findings
+    description: Create a Jira ticket for critical/high confidence findings.
+    level: 1
+    enabled: false
+    match:
+      min_risk_score: 90
+      severities:
+        - critical
+    actions:
+      - jira
+
+  - id: block_pr_on_secrets_or_dlp
+    description: Fail CI/PR gate when secrets or DLP findings are present.
+    level: 2
+    enabled: true
+    match:
+      min_risk_score: 75
+      categories:
+        - secrets
+        - dlp
+    gate: pull_request
+
+  - id: block_pr_on_high_risk_commands
+    description: Fail CI/PR gate when dangerous shell or git activity is detected.
+    level: 2
+    enabled: true
+    match:
+      min_risk_score: 80
+      categories:
+        - shell-risk
+        - git-risk
+    gate: pull_request

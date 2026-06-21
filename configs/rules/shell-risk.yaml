@@ -1,0 +1,36 @@
+rules:
+  - id: shell.read_env
+    category: shell
+    severity: high
+    risk_score: 80
+    description: Shell command appears to read environment or secret files.
+    patterns:
+      - '\b(cat|less|more|tail|head|grep|rg)\b.*(\.env|credentials|secrets|id_rsa|id_ed25519|\.aws|\.ssh)'
+  - id: shell.dangerous_delete
+    category: shell
+    severity: critical
+    risk_score: 95
+    description: Dangerous recursive delete command detected.
+    patterns:
+      - 'rm\s+-rf\s+(/|~|\$HOME|\*)'
+  - id: shell.curl_pipe_shell
+    category: shell
+    severity: high
+    risk_score: 85
+    description: Download-and-execute command detected.
+    patterns:
+      - '(curl|wget).*(\|\s*(sh|bash|zsh|python|python3))'
+  - id: shell.network_egress
+    category: shell
+    severity: medium
+    risk_score: 60
+    description: Shell command may perform external network egress.
+    patterns:
+      - '\b(curl|wget|nc|netcat|ncat|scp|rsync)\b\s+.*(http|https|ssh|ftp)'
+  - id: shell.chmod_sensitive
+    category: shell
+    severity: medium
+    risk_score: 55
+    description: Permission change on sensitive file or broad chmod detected.
+    patterns:
+      - 'chmod\s+(-R\s+)?(777|666|755|644).*(\.ssh|id_rsa|id_ed25519|credentials|secrets|\.env|/)'

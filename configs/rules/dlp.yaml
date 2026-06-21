@@ -1,0 +1,29 @@
+rules:
+  - id: dlp.ssn
+    category: dlp
+    severity: high
+    risk_score: 85
+    description: Possible US Social Security Number detected.
+    patterns:
+      - '\b(?!000|666|9\d\d)\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b'
+  - id: dlp.credit_card
+    category: dlp
+    severity: high
+    risk_score: 80
+    description: Possible payment card number detected.
+    patterns:
+      - '\b(?:\d[ -]*?){13,19}\b'
+  - id: dlp.email
+    category: dlp
+    severity: low
+    risk_score: 25
+    description: Email address detected.
+    patterns:
+      - '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'
+  - id: dlp.database_url
+    category: dlp
+    severity: high
+    risk_score: 80
+    description: Database connection string detected.
+    patterns:
+      - '(postgres|postgresql|mysql|mongodb|redis)://[^\s]+:[^\s]+@[^\s]+'

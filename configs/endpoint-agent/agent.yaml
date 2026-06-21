@@ -1,0 +1,120 @@
+# Hardened endpoint OTel Collector agent config.
+# Claude Code sends OTLP to localhost. The agent redacts, enriches, queues, and forwards upstream.
+# The filelog receiver also tails watchdog heartbeat/tamper events.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:4317
+      http:
+        endpoint: 127.0.0.1:4318
+
+  filelog/watchdog:
+    include:
+      - ${env:AGENTLENS_WATCHDOG_LOG_FILE}
+    start_at: end
+    include_file_path: true
+    include_file_name: true
+    operators:
+      - type: json_parser
+        parse_from: body
+      - type: move
+        from: body.event_type
+        to: attributes["event_type"]
+      - type: move
+        from: body.endpoint_id
+        to: attributes["endpoint.id"]
+      - type: move
+        from: body.severity
+        to: attributes["severity"]
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+
+  resourcedetection:
+    detectors: [system, env]
+    timeout: 2s
+    override: false
+
+  resource/endpoint:
+    attributes:
+      - key: agentlens.pipeline
+        value: agentlens-endpoint-agent
+        action: upsert
+      - key: endpoint.collection.mode
+        value: local-agent
+        action: upsert
+      - key: endpoint.tamper_protection.mode
+        value: watchdog-root-owned-service
+        action: upsert
+      - key: service.name
+        value: agentlens-endpoint-agent
+        action: upsert
+
+  attributes/security:
+    actions:
+      - key: agentlens.redaction.stage
+        value: endpoint
+        action: upsert
+
+  transform/redact:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          - replace_pattern(body, "(?i)(sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,})", "[REDACTED_TOKEN]")
+          - replace_pattern(body, "AKIA[0-9A-Z]{16}", "[REDACTED_AWS_ACCESS_KEY]")
+          - replace_pattern(body, "(?i)(aws_secret_access_key|api[_-]?key|token|password|passwd|secret)\\s*[:=]\\s*[^\\s,'\"]+", "$1=[REDACTED]")
+          - replace_pattern(body, "(?s)-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----.*?-----END (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----", "[REDACTED_PRIVATE_KEY]")
+
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  otlp/upstream:
+    endpoint: ${env:AGENTLENS_UPSTREAM_ENDPOINT}
+    tls:
+      insecure: ${env:AGENTLENS_UPSTREAM_INSECURE}
+    headers:
+      x-agentlens-endpoint-id: ${env:AGENTLENS_ENDPOINT_ID}
+      x-agentlens-api-key: ${env:AGENTLENS_API_KEY}
+    sending_queue:
+      enabled: true
+      num_consumers: 2
+      queue_size: 10000
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 60s
+      max_elapsed_time: 0
+
+  file/local_logs:
+    path: ${env:AGENTLENS_LOCAL_LOG_FILE}
+    rotation:
+      max_megabytes: 25
+      max_days: 3
+      max_backups: 3
+    format: json
+
+service:
+  telemetry:
+    metrics:
+      address: 127.0.0.1:8888
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, resource/endpoint, batch]
+      exporters: [otlp/upstream]
+    logs:
+      receivers: [otlp, filelog/watchdog]
+      processors: [memory_limiter, resourcedetection, resource/endpoint, attributes/security, transform/redact, batch]
+      exporters: [otlp/upstream, file/local_logs]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, resource/endpoint, batch]
+      exporters: [otlp/upstream]

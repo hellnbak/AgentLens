@@ -1,0 +1,16 @@
+rules:
+  - id: inactive-user-ai-usage
+    category: identity
+    severity: high
+    risk_score: 80
+    description: AI development telemetry appears associated with an inactive or disabled user.
+    patterns:
+      - '"identity.status"\s*:\s*"(?:inactive|deprovisioned|suspended)"'
+  - id: unmanaged-endpoint-ai-usage
+    category: identity
+    severity: medium
+    risk_score: 60
+    description: AI development telemetry appears to originate from an unmanaged or unknown endpoint.
+    patterns:
+      - '"device.managed"\s*:\s*false'
+      - '"endpoint_status"\s*:\s*"unmanaged"'

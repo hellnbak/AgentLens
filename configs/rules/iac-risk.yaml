@@ -1,0 +1,29 @@
+rules:
+  - id: iac.public_cidr
+    category: iac
+    severity: high
+    risk_score: 80
+    description: Infrastructure code appears to allow public access from 0.0.0.0/0.
+    patterns:
+      - '0\.0\.0\.0/0'
+      - '::/0'
+  - id: iac.s3_public
+    category: iac
+    severity: high
+    risk_score: 85
+    description: Infrastructure code appears to create public S3 exposure.
+    patterns:
+      - 'block_public_acls\s*=\s*false'
+      - 'block_public_policy\s*=\s*false'
+      - 'ignore_public_acls\s*=\s*false'
+      - 'restrict_public_buckets\s*=\s*false'
+      - 'Principal\s*[:=]\s*"\*".*s3:'
+  - id: iac.iam_wildcard_admin
+    category: iac
+    severity: high
+    risk_score: 85
+    description: Broad IAM action/resource wildcard detected.
+    patterns:
+      - 'Action\s*[:=]\s*"\*"'
+      - 'Resource\s*[:=]\s*"\*"'
+      - 'iam:PassRole'

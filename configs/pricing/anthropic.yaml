@@ -1,0 +1,17 @@
+provider: anthropic
+currency: USD
+note: Example pricing only. Update before using for chargeback or finance.
+models:
+  claude-sonnet-4:
+    input_per_million_tokens: 3.00
+    output_per_million_tokens: 15.00
+  claude-opus-4:
+    input_per_million_tokens: 15.00
+    output_per_million_tokens: 75.00
+  claude-haiku:
+    input_per_million_tokens: 0.80
+    output_per_million_tokens: 4.00
+aliases:
+  sonnet: claude-sonnet-4
+  opus: claude-opus-4
+  haiku: claude-haiku

@@ -1,0 +1,28 @@
+rules:
+  - id: mcp.server_connection
+    category: mcp
+    severity: medium
+    risk_score: 50
+    description: MCP server connection activity detected.
+    patterns:
+      - 'MCP server'
+      - 'mcp_server'
+      - 'mcp\.server'
+  - id: mcp.unknown_tool
+    category: mcp
+    severity: medium
+    risk_score: 60
+    description: MCP/tool call activity should be reviewed for trust and permissions.
+    patterns:
+      - 'tool_use'
+      - 'tool_call'
+      - 'Tool execution'
+  - id: prompt.injection_phrase
+    category: prompt
+    severity: medium
+    risk_score: 65
+    description: Prompt injection phrase detected.
+    patterns:
+      - '(?i)ignore (all )?(previous|prior) instructions'
+      - '(?i)reveal (the )?(system prompt|hidden instructions|developer message)'
+      - '(?i)exfiltrate|steal|bypass safety|disable guardrails'

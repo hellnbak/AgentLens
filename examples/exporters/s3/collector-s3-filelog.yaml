@@ -1,0 +1,10 @@
+# Portable S3 pattern: write JSONL locally with the collector, then sync using aws s3 sync.
+# For managed AWS deployments, prefer Firehose or an S3-capable collector distribution.
+exporters:
+  file/agentlens_s3_buffer:
+    path: /var/lib/agentlens/s3-buffer/agentlens-logs.jsonl
+    format: json
+service:
+  pipelines:
+    logs:
+      exporters: [file/agentlens_s3_buffer]
